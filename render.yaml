@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: markdown-to-pdf
+    env: node
+    buildCommand: npm install && npx playwright install chromium && npm run build
+    startCommand: node dist/server/index.js

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown to PDF</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1>Markdown to PDF</h1>
+    <p class="subtitle">Upload or paste Markdown, preview with Mermaid diagrams, configure print options, and download PDF.</p>
+  </header>
+
+  <main class="main">
+    <section class="editor-section">
+      <div class="toolbar">
+        <label class="btn btn-secondary">
+          Upload .md
+          <input type="file" accept=".md,.markdown,text/*" id="fileInput" hidden>
+        </label>
+        <button type="button" class="btn btn-secondary" id="loadSample">Load sample</button>
+      </div>
+      <textarea id="markdown" class="editor" placeholder="Paste or type Markdown here. Use &#10;&#10;```mermaid&#10;flowchart LR&#10;  A --> B&#10;```&#10;&#10;for diagrams."></textarea>
+    </section>
+
+    <section class="preview-section">
+      <div class="preview-header">
+        <span>Preview</span>
+        <button type="button" class="btn btn-primary" id="previewBtn">Update preview</button>
+      </div>
+      <div class="preview-wrap">
+        <div id="previewEmpty" class="preview-empty">
+          <p class="preview-empty-title">No preview yet</p>
+          <p class="preview-empty-text">Upload a .md file, load the sample, or paste Markdown in the editor, then click <strong>Update preview</strong>.</p>
+        </div>
+        <div id="previewLoading" class="preview-loading" aria-live="polite" hidden>Rendering…</div>
+        <iframe id="previewFrame" title="HTML preview" class="preview-frame" hidden></iframe>
+      </div>
+    </section>
+
+    <aside class="settings">
+      <h2>Print options</h2>
+      <div class="field">
+        <label for="format">Page size</label>
+        <select id="format">
+          <option value="A4">A4</option>
+          <option value="Letter">Letter</option>
+          <option value="Legal">Legal</option>
+          <option value="Tabloid">Tabloid</option>
+          <option value="Ledger">Ledger</option>
+          <option value="A3">A3</option>
+          <option value="A5">A5</option>
+          <option value="A6">A6</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="scale">Scale (0.1–2)</label>
+        <input type="number" id="scale" min="0.1" max="2" step="0.1" value="2">
+      </div>
+      <div class="field">
+        <label for="margin">Margins (e.g. 20mm)</label>
+        <input type="text" id="margin" placeholder="20mm" value="20mm">
+      </div>
+      <div class="field">
+        <label for="diagramMaxWidth">Diagram size</label>
+        <select id="diagramMaxWidth">
+          <option value="100%">100% (full width)</option>
+          <option value="90%">90%</option>
+          <option value="80%">80%</option>
+          <option value="70%">70%</option>
+          <option value="60%">60%</option>
+          <option value="50%">50%</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="pdfFilename">PDF filename</label>
+        <input type="text" id="pdfFilename" placeholder="document.pdf" value="">
+      </div>
+      <div class="field field-check">
+        <input type="checkbox" id="printBackground" checked>
+        <label for="printBackground">Print background</label>
+      </div>
+      <button type="button" class="btn btn-accent btn-block" id="downloadPdf">Download PDF</button>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
