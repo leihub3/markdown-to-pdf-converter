@@ -65,6 +65,22 @@ body {
   min-height: 280px;
 }
 
+.editor-section.drag-over {
+  background: rgba(124, 58, 237, 0.08);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.drop-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+  align-self: center;
+}
+
+@media (max-width: 600px) {
+  .drop-hint { display: none; }
+}
+
 .toolbar {
   display: flex;
   gap: 0.5rem;

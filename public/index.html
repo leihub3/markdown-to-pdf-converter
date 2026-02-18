@@ -13,13 +13,14 @@
   </header>
 
   <main class="main">
-    <section class="editor-section">
+    <section class="editor-section" id="dropZone" aria-label="Drop .md file here or use Upload">
       <div class="toolbar">
         <label class="btn btn-secondary">
           Upload .md
           <input type="file" accept=".md,.markdown,text/*" id="fileInput" hidden>
         </label>
         <button type="button" class="btn btn-secondary" id="loadSample">Load sample</button>
+        <span class="drop-hint">or drop a .md file here</span>
       </div>
       <textarea id="markdown" class="editor" placeholder="Paste or type Markdown here. Use &#10;&#10;```mermaid&#10;flowchart LR&#10;  A --> B&#10;```&#10;&#10;for diagrams."></textarea>
     </section>

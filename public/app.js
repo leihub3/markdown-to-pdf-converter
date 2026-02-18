@@ -203,8 +203,7 @@ async function sharePdf() {
   }
 }
 
-fileInput.addEventListener('change', (e) => {
-  const file = e.target.files?.[0];
+function loadFileFromFile(file) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
@@ -213,6 +212,38 @@ fileInput.addEventListener('change', (e) => {
     updatePreview();
   };
   reader.readAsText(file);
+}
+
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.dataTransfer.types.includes('Files')) dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('drag-over');
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files?.[0];
+  if (!file) return;
+  const name = (file.name || '').toLowerCase();
+  if (!name.endsWith('.md') && !name.endsWith('.markdown') && !file.type.startsWith('text/')) {
+    setStatus('Please drop a .md or text file.', 'error');
+    return;
+  }
+  loadFileFromFile(file);
+});
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (file) loadFileFromFile(file);
   e.target.value = '';
 });
 
