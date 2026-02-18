@@ -13,11 +13,12 @@ import type { MermaidBlock, RenderedDiagram } from './types.js';
 
 const isWindows = process.platform === 'win32';
 
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const ROOT_DIR = join(__dirname, '..');
+
 /** Resolve mmdc from project node_modules (mermaid-cli binary). */
 function getMmdcPath(): string {
-  const __dirname = fileURLToPath(new URL('.', import.meta.url));
-  const root = join(__dirname, '..');
-  const binDir = join(root, 'node_modules', '.bin');
+  const binDir = join(ROOT_DIR, 'node_modules', '.bin');
   const mmdc = join(binDir, 'mmdc');
   const mmdcCmd = join(binDir, 'mmdc.cmd');
   if (existsSync(mmdcCmd)) return mmdcCmd;
@@ -25,8 +26,16 @@ function getMmdcPath(): string {
   return 'mmdc'; // fallback to PATH
 }
 
+/** Path to Puppeteer config for mmdc (--no-sandbox etc.). Used when running as root (e.g. Docker). */
+function getPuppeteerConfigPath(): string | null {
+  const configPath = join(ROOT_DIR, 'puppeteer-config.json');
+  return existsSync(configPath) ? configPath : null;
+}
+
 function runMmdc(mmdcPath: string, inputPath: string, outputPath: string): Promise<void> {
   const args = ['-i', inputPath, '-o', outputPath, '-b', 'transparent'];
+  const puppeteerConfig = getPuppeteerConfigPath();
+  if (puppeteerConfig) args.unshift('-p', puppeteerConfig);
   return new Promise((resolve, reject) => {
     if (isWindows && mmdcPath.endsWith('.cmd')) {
       spawn('cmd.exe', ['/c', mmdcPath, ...args], {

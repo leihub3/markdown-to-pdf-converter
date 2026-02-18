@@ -81,7 +81,11 @@
         <input type="checkbox" id="printBackground" checked>
         <label for="printBackground">Print background</label>
       </div>
-      <button type="button" class="btn btn-accent btn-block" id="downloadPdf">Download PDF</button>
+      <div class="action-buttons">
+        <button type="button" class="btn btn-accent btn-block" id="downloadPdf">Download PDF</button>
+        <button type="button" class="btn btn-secondary btn-block" id="sharePdf" title="Share via Teams, email, or other apps">Share (Teams, etc.)</button>
+        <p class="share-hint">If sharing fails on Windows, use Download PDF and attach the file manually in Teams or Outlook.</p>
+      </div>
       <div id="status" class="status" role="status" aria-live="polite"></div>
     </aside>
   </main>

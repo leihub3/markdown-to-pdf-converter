@@ -4,6 +4,7 @@ const loadSampleBtn = document.getElementById('loadSample');
 const previewBtn = document.getElementById('previewBtn');
 const previewFrame = document.getElementById('previewFrame');
 const downloadPdfBtn = document.getElementById('downloadPdf');
+const sharePdfBtn = document.getElementById('sharePdf');
 const formatEl = document.getElementById('format');
 const scaleEl = document.getElementById('scale');
 const marginEl = document.getElementById('margin');
@@ -83,34 +84,120 @@ async function updatePreview() {
   }
 }
 
-async function downloadPdf() {
+async function fetchPdfBlob() {
   const markdown = markdownEl.value;
   const options = getOptions();
+  const res = await fetch('/api/pdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ markdown, options }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || res.statusText);
+  }
+  return { blob: await res.blob(), filename: options.filename || 'document.pdf' };
+}
+
+async function downloadPdf() {
   setStatus('Generating PDF…', 'loading');
   downloadPdfBtn.disabled = true;
+  sharePdfBtn.disabled = true;
   try {
-    const res = await fetch('/api/pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ markdown, options }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      const msg = data.error || res.statusText;
-      console.error('PDF error:', msg);
-      throw new Error(msg);
-    }
-    const blob = await res.blob();
+    const { blob, filename } = await fetchPdfBlob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = options.filename || 'document.pdf';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
     setStatus('PDF downloaded.', 'success');
   } catch (err) {
     console.error('PDF error:', err);
     setStatus('PDF could not be generated. Try reducing the document size or check your Markdown.', 'error');
+  } finally {
+    downloadPdfBtn.disabled = false;
+    sharePdfBtn.disabled = false;
+  }
+}
+
+let pendingShareBlob = null;
+let pendingShareFilename = null;
+
+function doShareNow() {
+  if (!pendingShareBlob || !pendingShareFilename) return;
+  const blob = pendingShareBlob;
+  const filename = pendingShareFilename;
+  pendingShareBlob = null;
+  pendingShareFilename = null;
+  sharePdfBtn.textContent = 'Share (Teams, etc.)';
+  sharePdfBtn.disabled = true;
+  const base = ((filename || 'document').replace(/\.pdf$/i, '').trim() || 'document').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const safeName = base ? base + '.pdf' : 'document.pdf';
+  const file = new File([blob], safeName, { type: 'application/pdf', lastModified: Date.now() });
+  const shareData = {
+    files: [file],
+    title: safeName.replace(/\.pdf$/i, ''),
+    text: 'Document converted from Markdown',
+  };
+  navigator.share(shareData)
+    .then(() => {
+      setStatus('Shared successfully.', 'success');
+    })
+    .catch((err) => {
+      if (err.name === 'AbortError') {
+        setStatus('Share cancelled.', '');
+      } else {
+        console.error('Share error:', err);
+        setStatus(err.message || 'Sharing failed.', 'error');
+      }
+    })
+    .finally(() => {
+      sharePdfBtn.disabled = false;
+      sharePdfBtn.textContent = 'Share (Teams, etc.)';
+    });
+}
+
+async function sharePdf() {
+  if (!navigator.share) {
+    setStatus('Sharing is not supported in this browser. Use Download PDF instead.', 'error');
+    return;
+  }
+  if (pendingShareBlob && pendingShareFilename) {
+    doShareNow();
+    return;
+  }
+  setStatus('Generating PDF…', 'loading');
+  downloadPdfBtn.disabled = true;
+  sharePdfBtn.disabled = true;
+  sharePdfBtn.textContent = 'Generating…';
+  try {
+    const { blob, filename } = await fetchPdfBlob();
+    if (blob.size === 0) {
+      throw new Error('The generated PDF is empty. Check your Markdown content.');
+    }
+    const arrayBuffer = await blob.arrayBuffer();
+    const materializedBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+    const base = ((filename || 'document').replace(/\.pdf$/i, '').trim() || 'document').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const safeName = base ? base + '.pdf' : 'document.pdf';
+    const shareData = {
+      files: [new File([materializedBlob], safeName, { type: 'application/pdf', lastModified: Date.now() })],
+      title: safeName.replace(/\.pdf$/i, ''),
+      text: 'Document converted from Markdown',
+    };
+    if (navigator.canShare && !navigator.canShare(shareData)) {
+      throw new Error('PDF cannot be shared. Use Download PDF instead.');
+    }
+    pendingShareBlob = materializedBlob;
+    pendingShareFilename = safeName;
+    sharePdfBtn.disabled = false;
+    sharePdfBtn.textContent = 'Share now (Teams, etc.)';
+    setStatus('PDF ready. Click "Share now" to open the share dialog.', 'success');
+  } catch (err) {
+    console.error('Share error:', err);
+    setStatus(err.message || 'Sharing failed. Try Download PDF instead.', 'error');
+    sharePdfBtn.disabled = false;
+    sharePdfBtn.textContent = 'Share (Teams, etc.)';
   } finally {
     downloadPdfBtn.disabled = false;
   }
@@ -143,3 +230,8 @@ loadSampleBtn.addEventListener('click', async () => {
 
 previewBtn.addEventListener('click', updatePreview);
 downloadPdfBtn.addEventListener('click', downloadPdf);
+sharePdfBtn.addEventListener('click', sharePdf);
+
+if (!navigator.share) {
+  sharePdfBtn.hidden = true;
+}
